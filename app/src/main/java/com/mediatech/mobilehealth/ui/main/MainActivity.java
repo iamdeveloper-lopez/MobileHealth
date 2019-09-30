@@ -17,9 +17,7 @@ import com.mediatech.mobilehealth.R;
 import com.mediatech.mobilehealth.helper.DatabaseHelper;
 import com.mediatech.mobilehealth.helper.DateHelper;
 import com.mediatech.mobilehealth.helper.IntentHelper;
-import com.mediatech.mobilehealth.interfaces.StepListener;
 import com.mediatech.mobilehealth.model.OpenWeatherWrapper;
-import com.mediatech.mobilehealth.sensor.StepDetector;
 import com.mediatech.mobilehealth.ui.base.BaseLocationActivity;
 import com.mediatech.mobilehealth.ui.settings.SettingsActivity;
 import com.mediatech.mobilehealth.ui.user.UserActivity;
@@ -34,7 +32,9 @@ import butterknife.OnClick;
 import dagger.android.AndroidInjection;
 import timber.log.Timber;
 
-public class MainActivity extends BaseLocationActivity implements MainInteractor.View, SensorEventListener, StepListener {
+public class MainActivity extends BaseLocationActivity implements MainInteractor.View, SensorEventListener {
+
+    private static final String TAG = "STEP";
 
     @BindView(R.id.activity_main_swipe_layout)
     SwipeRefreshLayout swipeLayout;
@@ -50,6 +50,12 @@ public class MainActivity extends BaseLocationActivity implements MainInteractor
     TextView stepCounterView;
     @BindView(R.id.activity_main_text_view_step_counter_label)
     TextView stepCounterLabel;
+    @BindView(R.id.activity_main_text_view_pressure)
+    TextView pressure;
+    @BindView(R.id.activity_main_text_view_humidity)
+    TextView humidity;
+    @BindView(R.id.activity_main_text_view_wind_speed)
+    TextView windSpeed;
 
     @OnClick(R.id.activity_main_image_button_settings)
     void onSettingsClicked() {
@@ -70,10 +76,30 @@ public class MainActivity extends BaseLocationActivity implements MainInteractor
     @Inject
     DatabaseHelper database;
 
-    private StepDetector simpleStepDetector;
     private SensorManager sensorManager;
     private Sensor stepSensor;
     private long steps = 0;
+
+    private String lastTimeMillis;
+    private int lastStatus = 0;
+
+    private int counter = 0;
+
+    private long startWalkTime = 0;
+    private long endWalkTime = 0;
+
+    private long startRunningTime = 0;
+    private long endRunningTime = 0;
+
+    private long totalRunning = 0;
+    private long totalWalking = 0;
+
+    private int WALKING = 1;
+    private int RUNNING = 2;
+
+    private String active_running_time_key;
+    private String active_walking_time_key;
+    private String steps_key;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,10 +110,34 @@ public class MainActivity extends BaseLocationActivity implements MainInteractor
         swipeLayout.setOnRefreshListener(this::fetchOpenWeatherAPI);
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-        simpleStepDetector = new StepDetector();
-        simpleStepDetector.registerListener(this);
+        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
 
+        String key = DateHelper.newInstance().getFormattedDate(new Date(), "yyyy-MM-dd");
+
+        active_running_time_key = key + "-active-running-time";
+        active_walking_time_key = key + "-active-walking-time";
+        steps_key = key + "-steps";
+
+        totalRunning = DatabaseHelper.get().getLong(active_running_time_key, 0);
+        totalWalking = DatabaseHelper.get().getLong(active_walking_time_key, 0);
+
+        steps = DatabaseHelper.get().getLong(steps_key, 0);
+
+        showSteps();
+
+        if (database.getSetting() != null) {
+            if (database.getSetting().isValid()) {
+                //VALID
+            } else {
+                new IntentHelper.Builder(this)
+                        .toClass(SettingsActivity.class)
+                        .show();
+            }
+        } else {
+            new IntentHelper.Builder(this)
+                    .toClass(SettingsActivity.class)
+                    .show();
+        }
 
     }
 
@@ -125,6 +175,9 @@ public class MainActivity extends BaseLocationActivity implements MainInteractor
         description.setText(wrapper.weather.get(0).title);
         temperature.setText(String.format("%sºC", wrapper.temperature.value));
         country.setText(database.getCountryByCode(wrapper.sun.countryCode));
+        pressure.setText(String.format("%s hPa",wrapper.temperature.pressure));
+        humidity.setText(String.format("%s %%",wrapper.temperature.humidity));
+        windSpeed.setText(String.format("%s m/s",wrapper.wind.speed));
     }
 
     @Override
@@ -180,32 +233,73 @@ public class MainActivity extends BaseLocationActivity implements MainInteractor
         Date date = new Date();
         date.setTime(System.currentTimeMillis());
         Log.d("step", "time: " + DateHelper.newInstance().getFormattedDate(date, "yyyy-MM-dd HH:mm:ss"));
-        Sensor sensor = event.sensor;
-        float[] values = event.values;
-        int value = -1;
-        if (values.length > 0) {
-            value = (int) values[0];
-            Log.d("step", "value1: " + value);
-            steps = value;
-            showSteps();
+        String timeMillis = DateHelper.newInstance().getFormattedDate(date, "yyyy-MM-dd HH:mm:ss");
+        int status = WALKING;
+        if (timeMillis.equalsIgnoreCase(lastTimeMillis)) {
+            counter++;
+            if (counter >= 3) {
+                status = RUNNING;
+                Log.d(TAG, "status : running");
+            } else if (counter == 1 || counter == 2) {
+                status = WALKING;
+                Log.d(TAG, "status : walking");
+            }
+        } else {
+            counter = 0;
+            counter++;
         }
-//        if (sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-//            Log.d("step", "value2: " + steps++);
-//            showSteps();
-////            simpleStepDetector.updateAccel(event.timestamp, event.values[0], event.values[1], event.values[2]);
-//        }
+
+        lastTimeMillis = timeMillis;
+
+        steps++;
+        DatabaseHelper.get().put(steps_key, steps);
+        showSteps();
+
+        if (status == RUNNING) {
+            Log.d(TAG, "running last status: " + lastStatus);
+            if (startRunningTime == 0)
+                startRunningTime = System.currentTimeMillis();
+            if (lastStatus != 0) {
+                if (lastStatus != status) {
+                    if (endWalkTime == 0) {
+                        endWalkTime = System.currentTimeMillis();
+                        //SAVE WALKING
+                        totalWalking += (endWalkTime - startWalkTime);
+                        DatabaseHelper.get().put(active_walking_time_key, totalWalking);
+                        Log.d(TAG, "WALKING TIME : " + totalWalking);
+                        startWalkTime = 0;
+                        endWalkTime = 0;
+                    }
+                }
+            }
+        }
+
+        if (status == WALKING) {
+            Log.d(TAG, "walking last status: " + lastStatus);
+            if (startWalkTime == 0)
+                startWalkTime = System.currentTimeMillis();
+            if (lastStatus != 0) {
+                if (lastStatus != status) {
+                    if (endRunningTime == 0) {
+                        endRunningTime = System.currentTimeMillis();
+                        //SAVE RUNNING
+                        totalRunning += (endRunningTime - startRunningTime);
+                        DatabaseHelper.get().put(active_running_time_key, totalRunning);
+                        Log.d(TAG, "RUNNING TIME : " + totalRunning);
+                        startRunningTime = 0;
+                        endRunningTime = 0;
+                    }
+                }
+            }
+        }
+
+        lastStatus = status;
+
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
         Log.d("Sensor", "name: " + sensor.getName());
         Log.d("Sensor", "type: " + sensor.getStringType());
-    }
-
-    @Override
-    public void step(long timeNs) {
-//        numSteps++;
-//        stepCounterView.setText(String.valueOf(numSteps));
-//        stepCounterLabel.setText(String.format("step%s", numSteps > 0 ? "s" : ""));
     }
 }

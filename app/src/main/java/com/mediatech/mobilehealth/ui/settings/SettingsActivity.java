@@ -28,12 +28,15 @@ public class SettingsActivity extends BaseActivity {
     RadioButton buttonFemale;
     @BindView(R.id.activity_settings_edit_text_height)
     EditText editTextHeight;
+    @BindView(R.id.activity_settings_edit_text_weight)
+    EditText editTextWeight;
 
     @OnClick(R.id.activity_settings_button_save)
     void onSaveClicked() {
         String heightValue = editTextHeight.getText().toString();
-        if (genderValue > 0f && !TextUtils.isEmpty(heightValue)) {
-            UserSetting userSetting = new UserSetting(String.valueOf(genderValue), heightValue);
+        String weightValue = editTextWeight.getText().toString();
+        if (genderValue > 0f && !TextUtils.isEmpty(heightValue) && !TextUtils.isEmpty(weightValue)) {
+            UserSetting userSetting = new UserSetting(String.valueOf(genderValue), heightValue, weightValue);
             DatabaseHelper.get().put("settings", userSetting.toJson());
             finish();
         } else {
@@ -41,7 +44,9 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
-    float genderValue = 0.0f;
+    private float genderValue = 0.0f;
+
+    private UserSetting setting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +55,15 @@ public class SettingsActivity extends BaseActivity {
         setContentView(R.layout.activity_settings);
 
         toolbar.setNavigationOnClickListener(view -> {
-            finish();
+            if (setting != null) {
+                if (setting.isValid()) {
+                    finish();
+                } else {
+                    Toast.makeText(this, "Other fields empty or not modified", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Other fields empty or not modified", Toast.LENGTH_SHORT).show();
+            }
         });
 
         buttonMale.setOnCheckedChangeListener((compoundButton, isChecked) -> {
@@ -67,13 +80,14 @@ public class SettingsActivity extends BaseActivity {
 
         String settingsJson = DatabaseHelper.get().getString("settings", null);
         if (!TextUtils.isEmpty(settingsJson)) {
-            UserSetting setting = new Gson().fromJson(settingsJson, UserSetting.class);
+            setting = new Gson().fromJson(settingsJson, UserSetting.class);
             if (Float.valueOf(setting.gender) == 0.415f) {
                 buttonMale.setChecked(true);
             } else if (Float.valueOf(setting.gender) == 0.413f) {
                 buttonFemale.setChecked(true);
             }
             editTextHeight.setText(setting.height);
+            editTextWeight.setText(setting.weight);
         }
 
     }

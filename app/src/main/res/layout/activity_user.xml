@@ -7,15 +7,56 @@
     tools:context=".ui.user.UserActivity">
 
     <TextView
-        android:id="@+id/activity_user_text_view_title"
+        android:id="@+id/activity_user_text_view_calories_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="Today"
-        android:textSize="30sp"
+        android:layout_marginTop="32dp"
+        android:text="Calories : "
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+
+    <TextView
+        android:id="@+id/activity_user_text_view_calories"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/edittext_background"
+        android:padding="10dp"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/activity_user_text_view_calories_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/activity_user_text_view_calories_label"
+        app:layout_constraintTop_toTopOf="@+id/activity_user_text_view_calories_label"
+        tools:text="100" />
+
+    <TextView
+        android:id="@+id/activity_user_text_view_distance_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:text="Distance : "
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/activity_user_text_view_calories_label" />
+
+    <TextView
+        android:id="@+id/activity_user_text_view_distance"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/edittext_background"
+        android:padding="10dp"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/activity_user_text_view_distance_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/activity_user_text_view_distance_label"
+        app:layout_constraintTop_toTopOf="@+id/activity_user_text_view_distance_label"
+        tools:text="100" />
 
     <com.mediatech.mobilehealth.ui.views.StatusBar
         android:id="@+id/statusBar"
@@ -37,7 +78,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/statusBar"
         app:navigationIcon="@drawable/ic_close_white"
-        app:title=""
+        app:title="Today"
         app:titleTextColor="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

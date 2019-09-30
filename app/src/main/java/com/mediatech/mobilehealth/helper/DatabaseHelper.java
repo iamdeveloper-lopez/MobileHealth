@@ -3,9 +3,12 @@ package com.mediatech.mobilehealth.helper;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
+import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.mediatech.mobilehealth.MobileHealth;
+import com.mediatech.mobilehealth.model.UserSetting;
 
 import net.grandcentrix.tray.TrayPreferences;
 
@@ -93,6 +96,14 @@ public class DatabaseHelper extends TrayPreferences {
         } else {
             return null;
         }
+    }
+
+    public UserSetting getSetting() {
+        String settingsJson = DatabaseHelper.get().getString("settings", null);
+        if (!TextUtils.isEmpty(settingsJson)) {
+            return new Gson().fromJson(settingsJson, UserSetting.class);
+        }
+        return null;
     }
 
 }
