@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="font_light">fonts/quicksand/Quicksand-Light.ttf</string>
+	<string name="font_regular">fonts/quicksand/Quicksand-Regular.ttf</string>
+	<string name="font_medium">fonts/quicksand/Quicksand-Medium.ttf</string>
+	<string name="font_bold">fonts/quicksand/Quicksand-Bold.ttf</string>
+	<string name="font_italic">fonts/quicksand/Quicksand-Italic.otf</string>
+	<string name="font_dash">fonts/quicksand/Quicksand-Dash.otf</string>
+</resources>
