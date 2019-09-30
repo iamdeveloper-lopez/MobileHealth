@@ -11,8 +11,6 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.mediatech.mobilehealth.helper.DateHelper;
-
 import java.util.Date;
 
 public class StepService extends Service implements SensorEventListener {
@@ -58,7 +56,6 @@ public class StepService extends Service implements SensorEventListener {
             value = (int) values[0];
             Log.d("step", "value: " + value);
             steps = value;
-            Log.d("step", "time: " + DateHelper.newInstance().getFormattedDate(date, "yyyy-MM-dd"));
         }
     }
 

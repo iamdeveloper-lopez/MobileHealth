@@ -28,6 +28,7 @@ android {
         buildConfigField "String", "API_KEY", '"a645bca10d35126c7c457dfdd9af6e8c"'
         buildConfigField "String", "BASE_API_URL", '"http://api.openweathermap.org/data/2.5/"'
         buildConfigField "String", "BASE_ICON_URL", '"http://openweathermap.org/img/wn/%s@2x.png"'
+        //45fd130916452ca4402e1371f86647a7
     }
     buildTypes {
         release {
